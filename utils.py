@@ -11,8 +11,6 @@ import shutil
 import sys
 import math
 
-import geventhttpclient
-import pycurl
 from io import BytesIO
 
 import argparse
@@ -23,7 +21,6 @@ import errno
 
 import orjson as json
 import pandas as pd
-import jmespath
 
 from urllib.parse import urlparse
 from http.cookies import SimpleCookie
@@ -32,7 +29,6 @@ from collections import Counter
 
 from bs4 import BeautifulSoup
 from glob import glob
-from gevent.timeout import Timeout as GeventTimeout
 
 log = logging.getLogger("utils")
 	    
@@ -83,7 +79,7 @@ def request_page(url,referer:str='https://www.google.com',proxy=None,useragent=N
 
 		Examples:
 
-			pw.request_page('https://ifconfig.co/json',use_ghttp=True,proxylist=['sfo2proxy:8882'],search_text='time_zone',useragent='Mozzcurl testing-agent ua',force_xml_http_request=True)
+			request_page('https://ifconfig.co/json',use_ghttp=True,proxylist=['sfo2proxy:8882'],search_text='time_zone',useragent='Mozzcurl testing-agent ua',force_xml_http_request=True)
 	"""
 
 
