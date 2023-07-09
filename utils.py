@@ -10,13 +10,10 @@ from pathlib import Path
 import shutil
 import sys
 import math
-
 from io import BytesIO
 
-import argparse
 import urllib
 import logging
-import itertools
 import errno
 
 import orjson as json
@@ -27,7 +24,6 @@ from http.cookies import SimpleCookie
 from collections import defaultdict
 from collections import Counter
 
-from bs4 import BeautifulSoup
 from glob import glob
 
 log = logging.getLogger("utils")

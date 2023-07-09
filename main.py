@@ -1,16 +1,35 @@
-import utils as ut
-import selectolax as HTMLParser
+import random
+import requests
+import re
+import os
+import traceback
+import datetime
+import dateutil
+import time
+from pathlib import Path
+import shutil
+import sys
 import math
-import logging
-log = logging.getLogger("parser")
+import pytz
+import argparse
+from io import BytesIO
 
-def parser():
-	search_keywords = ['python','data engineer']
+from .utils import *
+from selectolax.parser import HTMLParser
+import logging
+
+
+log = logging.getLogger("parser")
+tzhk = pytz.timezone('Asia/Hong_Kong')
+yyyymmddformat = '%Y%m%d'
+
+def pull_category_data(search_keywords=None):
+	alldata = []
 	for keyword in search_keywords:
 		if len(keyword) > 1:
 			keyword = '-'.join(keyword.split(' '))
 		init_url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/1?sort=createdAt'
-		rawdata = ut.request_page(init_url)
+		rawdata = request_page(init_url)
 		html = HTMLParser(rawdata['html'])
 		fpages = html.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 _1d0g9qk4 y44q7i7']")
 		total_jobs = fpages.text().split('of')[1].split('jobs')[0].replace(',','').strip()
@@ -19,7 +38,7 @@ def parser():
 
 		for page in range(total_pages)[:2]:
 			url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/'+ str(page+1) + '?sort=createdAt'
-			page_data = ut.request_page(url)
+			page_data = request_page(url)
 			data = HTMLParser(page_data['html'])
 			page_jobs = data.css("div[class='z1s6m00 _1hbhsw67i _1hbhsw66e _1hbhsw69q _1hbhsw68m _1hbhsw6n _1hbhsw65a _1hbhsw6ga _1hbhsw6fy']")
 			for job_info in page_jobs[:5]:
@@ -30,16 +49,56 @@ def parser():
 				title = info.text()
 				company_name = job_info.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 y44q7ih']").text()
 				d = {"company": company_name, "title":title, "url":url}
-				log.warning(d)
-				# for job in alldata:
-				# if 'data' in job['title'].lower():
-				# 	print(job)
+				alldata.append(d)
+	return alldata
 
-				# details = request_page(job['url'])
-				# data = HTMLParser(details['html'])
-				# data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
+def html_parser():
+	# for job in alldata:
+		# if 'data' in job['title'].lower():
+		# 	print(job)
+
+		# details = request_page(job['url'])
+		# data = HTMLParser(details['html'])
+		# data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
 				
-				# alldata.append(d)
 
-def main():
-	parser()
+def nowtime(tz=tzhk):
+	"""
+		Get the current datetime stamp
+
+		Returns:
+			the YYYYMMDD of the date
+	"""
+	dtnow = datetime.datetime.utcnow()
+	utc_dt = dtnow.replace(tzinfo=pytz.utc)
+	jp_dt = utc_dt.astimezone(tz)
+	dts = jp_dt.strftime(yyyymmddformat)
+	return dts
+
+
+if __name__ == "__main__":
+	"""
+		Example usage:
+		
+		cd ~/apps/jellibean 
+		git clone git@github.com:jellibeans-dot-com/themes.git
+		cd trends
+		python3 -m trends.main --generate_forecast_and_save
+	"""
+	dt = nowtime()
+	parser = argparse.ArgumentParser()
+
+	parser.add_argument("--get_jobs",help="create views required for analysis",action="store_true")
+	parser.add_argument("--keywords", help="", default=None)
+	parser.add_argument("--dt", help="date to use", type=int, default=dt)
+	parser.add_argument("--debug", help="turn on debug output", action="store_true")
+
+	args = parser.parse_args()
+	
+	dt = args.dt if args.dt else dt
+
+	if args.debug:
+		log.setLevel(logging.DEBUG)
+
+	if args.get_jobs:
+		pull_data(search_keywords=args.keywords)
