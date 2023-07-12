@@ -29,6 +29,7 @@ def pull_category_data(search_keywords=None):
 		if len(keyword) > 1:
 			keyword = '-'.join(keyword.split(' '))
 		init_url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/1?sort=createdAt'
+		log.warning(f'Searching jobs for keyword {keyword}')
 		rawdata = request_page(init_url)
 		html = HTMLParser(rawdata['html'])
 		fpages = html.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 _1d0g9qk4 y44q7i7']")
@@ -52,14 +53,15 @@ def pull_category_data(search_keywords=None):
 				alldata.append(d)
 	return alldata
 
-def html_parser():
-	# for job in alldata:
-		# if 'data' in job['title'].lower():
-		# 	print(job)
-
-		# details = request_page(job['url'])
-		# data = HTMLParser(details['html'])
-		# data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
+def html_parser(alldata):
+	# alldata = pull_category_data(search_keywords)
+	for job in alldata:
+		# print(job)
+		if 'data' in job['title'].lower():
+			job_details = request_page(job['url'])
+			data = HTMLParser(job_details['html'])
+			print(data)
+			data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
 	return 1
 
 def nowtime(tz=tzhk):
@@ -79,7 +81,7 @@ def nowtime(tz=tzhk):
 if __name__ == "__main__":
 	"""
 		Example usage:
-		python3 -m Jobsdb.main --get_jobs --keywords 'python'
+		python3 -m job_search.main --get_jobs --keywords 'python','data'
 	"""
 	dt = nowtime()
 	parser = argparse.ArgumentParser()
@@ -97,4 +99,5 @@ if __name__ == "__main__":
 		log.setLevel(logging.DEBUG)
 
 	if args.get_jobs:
-		pull_category_data(search_keywords=args.keywords)
+		alldata = pull_category_data(search_keywords=args.keywords)
+		result = html_parser(alldata)
