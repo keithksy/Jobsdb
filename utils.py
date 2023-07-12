@@ -198,26 +198,12 @@ def request_page(url,referer:str='https://www.google.com',proxy=None,useragent=N
 			page = None
 			break
 
-		except GeventTimeout as e:
-			log.debug("REQUESTS gevent-timeout error when pulling url: %s" % (url))
-			lasterr = traceback.format_exc()
-			lasterr_code = 408
-			sleep_for = 0.5 if use_proxy else (sleepsecs * (tries+1))
-			time.sleep(sleep_for)
-
 		except requests.exceptions.ChunkedEncodingError as e:
 			log.debug("REQUESTS proxy error when pulling url: %s (tries=%s) e=%s" % (url,tries,e))
 			lasterr = "requests.ChunkedEncodingError: " + str(e) # traceback.format_exc()
 			lasterr_code = 820
 			sleep_for = 2 if use_proxy else (sleepsecs * (tries+1)) # usually this is due to the proxy changing ips
 			time.sleep(sleep_for)			
-
-		except requests.exceptions.ProxyError as e:
-			log.debug("REQUESTS proxy error when pulling url: %s (tries=%s) e=%s" % (url,tries,e))
-			lasterr = "requests.ProxyError: " + str(e) # traceback.format_exc()
-			lasterr_code = 502
-			sleep_for = 2 if use_proxy else (sleepsecs * (tries+1)) # usually this is due to the proxy changing ips
-			time.sleep(sleep_for)
 
 		except requests.exceptions.ConnectionError as e:
 			log.debug("REQUESTS connection error when pulling url: %s (tries=%s) e=%s" % (url,tries,e))
@@ -227,7 +213,7 @@ def request_page(url,referer:str='https://www.google.com',proxy=None,useragent=N
 			time.sleep(sleep_for)
 
 		except Exception as e:
-			if debug: log.warning("ALERT - UNKOWN EXCEPTION WHEN PULLING url: %s (proxy=%s) e=%s" % (url,str(e)))
+			if debug: log.warning("ALERT - UNKOWN EXCEPTION WHEN PULLING url: %s e=%s" % (url,str(e)))
 			lasterr = traceback.format_exc()
 			log.warning(lasterr)
 			lasterr_code = 730
@@ -270,7 +256,7 @@ def request_page(url,referer:str='https://www.google.com',proxy=None,useragent=N
 		return res
 
 	if not page:
-		msg = "no page data after %s tries, proxy=%s proxylist=%s lasterr_code=%s lasterr=%s" % (tries,proxy,proxylist,lasterr_code,lasterr)
+		msg = "no page data after %s tries, proxy=%s lasterr_code=%s lasterr=%s" % (tries,proxy,lasterr_code,lasterr)
 		res['error_msg'] = msg
 		error_code = status_code if status_code else lasterr_code
 		res['error_code'] = error_code or 850

@@ -60,7 +60,7 @@ def html_parser():
 		# details = request_page(job['url'])
 		# data = HTMLParser(details['html'])
 		# data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
-				
+	return 1
 
 def nowtime(tz=tzhk):
 	"""
@@ -79,11 +79,7 @@ def nowtime(tz=tzhk):
 if __name__ == "__main__":
 	"""
 		Example usage:
-		
-		cd ~/apps/jellibean 
-		git clone git@github.com:jellibeans-dot-com/themes.git
-		cd trends
-		python3 -m trends.main --generate_forecast_and_save
+		python3 -m Jobsdb.main --get_jobs --keywords 'python'
 	"""
 	dt = nowtime()
 	parser = argparse.ArgumentParser()
@@ -101,4 +97,4 @@ if __name__ == "__main__":
 		log.setLevel(logging.DEBUG)
 
 	if args.get_jobs:
-		pull_data(search_keywords=args.keywords)
+		pull_category_data(search_keywords=args.keywords)
