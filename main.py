@@ -14,7 +14,7 @@ import pytz
 import argparse
 from io import BytesIO
 
-from .utils import *
+from utils import *
 from selectolax.parser import HTMLParser
 import logging
 
@@ -25,14 +25,16 @@ yyyymmddformat = '%Y%m%d'
 
 def pull_category_data(search_keywords=None):
 	alldata = []
+	search_keywords = search_keywords.split(',')
 	for keyword in search_keywords:
 		if len(keyword) > 1:
 			keyword = '-'.join(keyword.split(' '))
 		init_url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/1?sort=createdAt'
-		log.warning(f'Searching jobs for keyword {keyword}')
+		log.warning(f'Searching jobs for keyword: {keyword} ----------------------------')
 		rawdata = request_page(init_url)
 		html = HTMLParser(rawdata['html'])
 		fpages = html.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 _1d0g9qk4 y44q7i7']")
+		print(fpages)
 		total_jobs = fpages.text().split('of')[1].split('jobs')[0].replace(',','').strip()
 		jobs_per_page = 30
 		total_pages = math.ceil(int(total_jobs)/jobs_per_page)
@@ -52,6 +54,16 @@ def pull_category_data(search_keywords=None):
 				d = {"company": company_name, "title":title, "url":url}
 				alldata.append(d)
 	return alldata
+
+def pull_test_data(keyword='python'):
+	init_url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/1?sort=createdAt'
+	log.warning(f'Testing connection to: {init_url}')
+	rawdata = request_page(init_url)
+	html = HTMLParser(rawdata['html'])
+	
+	fpages = html.css_first("span[class='_1unphw40 tcmsgw4v tcmsgw51']")
+	#print(html.html)
+	return
 
 def html_parser(alldata):
 	# alldata = pull_category_data(search_keywords)
@@ -87,6 +99,7 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser()
 
 	parser.add_argument("--get_jobs",help="create views required for analysis",action="store_true")
+	parser.add_argument("--test",help="test connection to jobsdb",action="store_true")
 	parser.add_argument("--keywords", help="", default=None)
 	parser.add_argument("--dt", help="date to use", type=int, default=dt)
 	parser.add_argument("--debug", help="turn on debug output", action="store_true")
@@ -97,6 +110,9 @@ if __name__ == "__main__":
 
 	if args.debug:
 		log.setLevel(logging.DEBUG)
+
+	if args.test:
+		test_result = pull_test_data()
 
 	if args.get_jobs:
 		alldata = pull_category_data(search_keywords=args.keywords)
