@@ -1,3 +1,5 @@
 requests
 orjson
 selectolax
+pytz
+pandas

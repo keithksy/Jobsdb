@@ -2,13 +2,9 @@ import random
 import requests
 import re
 import os
-import traceback
 import datetime
-import dateutil
 import time
 from pathlib import Path
-import shutil
-import sys
 import math
 import pytz
 import argparse
@@ -23,7 +19,7 @@ log = logging.getLogger("parser")
 tzhk = pytz.timezone('Asia/Hong_Kong')
 yyyymmddformat = '%Y%m%d'
 
-def pull_category_data(search_keywords=None):
+def pull_category_data(search_keywords='test'):
 	alldata = []
 	search_keywords = search_keywords.split(',')
 	for keyword in search_keywords:
@@ -34,25 +30,29 @@ def pull_category_data(search_keywords=None):
 		rawdata = request_page(init_url)
 		html = HTMLParser(rawdata['html'])
 		fpages = html.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 _1d0g9qk4 y44q7i7']")
-		print(fpages)
-		total_jobs = fpages.text().split('of')[1].split('jobs')[0].replace(',','').strip()
-		jobs_per_page = 30
-		total_pages = math.ceil(int(total_jobs)/jobs_per_page)
+		if fpages:
+			total_jobs = fpages.text().split('of')[1].split('jobs')[0].replace(',','').strip()
+			jobs_per_page = 30
+			total_pages = math.ceil(int(total_jobs)/jobs_per_page)
 
-		for page in range(total_pages)[:2]:
-			url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/'+ str(page+1) + '?sort=createdAt'
-			page_data = request_page(url)
-			data = HTMLParser(page_data['html'])
-			page_jobs = data.css("div[class='z1s6m00 _1hbhsw67i _1hbhsw66e _1hbhsw69q _1hbhsw68m _1hbhsw6n _1hbhsw65a _1hbhsw6ga _1hbhsw6fy']")
-			for job_info in page_jobs[:5]:
-				info = job_info.css_first("h1[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i3 y44q7i21 y44q7ii']")
-				url_prefix = 'https://hk.jobsdb.com'
-				url_suffix = info.css_first('a').attrs['href']
-				url = url_prefix + url_suffix
-				title = info.text()
-				company_name = job_info.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 y44q7ih']").text()
-				d = {"company": company_name, "title":title, "url":url}
-				alldata.append(d)
+			for page in range(total_pages)[:2]:
+				url = 'https://hk.jobsdb.com/hk/search-jobs/' + keyword + '/'+ str(page+1) + '?sort=createdAt'
+				page_data = request_page(url)
+				data = HTMLParser(page_data['html'])
+				page_jobs = data.css("div[class='z1s6m00 _1hbhsw67i _1hbhsw66e _1hbhsw69q _1hbhsw68m _1hbhsw6n _1hbhsw65a _1hbhsw6ga _1hbhsw6fy']")
+				for job_info in page_jobs[:5]:
+					info = job_info.css_first("h1[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i3 y44q7i21 y44q7ii']")
+					url_prefix = 'https://hk.jobsdb.com'
+					url_suffix = info.css_first('a').attrs['href']
+					url = url_prefix + url_suffix
+					title = info.text()
+					company_name = job_info.css_first("span[class='z1s6m00 _1hbhsw64y y44q7i0 y44q7i1 y44q7i21 y44q7ih']").text()
+					d = {"company": company_name, "title":title, "url":url}
+					alldata.append(d)
+		else:
+			log.warning(f'Data cannot be found, check raw css and update parser')
+			log.warning(f'=============================Job ends=============================')
+			alldata = None
 	return alldata
 
 def pull_test_data(keyword='python'):
@@ -60,9 +60,13 @@ def pull_test_data(keyword='python'):
 	log.warning(f'Testing connection to: {init_url}')
 	rawdata = request_page(init_url)
 	html = HTMLParser(rawdata['html'])
-	
+	with open('./src/rawhtml.txt', 'w') as output:
+		output.write(html.html)
 	fpages = html.css_first("span[class='_1unphw40 tcmsgw4v tcmsgw51']")
-	#print(html.html)
+	if fpages:
+		print('data successfully fetch')
+	else:
+		print('Warning - css updated - parser update required')
 	return
 
 def html_parser(alldata):
@@ -74,7 +78,7 @@ def html_parser(alldata):
 			data = HTMLParser(job_details['html'])
 			print(data)
 			data.css_first("div[data-automation='jobDescription']").html#.attributes#.css('p'))
-	return 1
+	return True
 
 def nowtime(tz=tzhk):
 	"""
@@ -116,4 +120,4 @@ if __name__ == "__main__":
 
 	if args.get_jobs:
 		alldata = pull_category_data(search_keywords=args.keywords)
-		result = html_parser(alldata)
+		result = html_parser(alldata) if alldata else None
